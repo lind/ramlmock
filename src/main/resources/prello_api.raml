@@ -1,0 +1,116 @@
+#%RAML 0.8
+title: Prello
+version: 0.1
+mediaType: application/json
+schemas:
+  - board: !include schema/board-schema.json
+  - board-post: !include schema/board-schema-post.json
+  - error: !include schema/error-schema.json
+documentation:
+  - title: Prello consepts
+    content: |
+        Example of a multiline part of RAML doc.
+        Any number of title/content could be added.
+/boards:
+  description: Boards is the main consept of Prello
+  get:
+    queryParameters:
+      name:
+        description: Optional query param
+        example: Work
+    responses:
+      200:
+        body:
+          example: |
+            [
+              {"id": 1, "name": "Kitchen redesign", "Description": "Extreme makeover of the kitchen"},
+              {"id": 2, "name": "Work", "Description": "Work TODO lists"},
+              {"id": 3, "name": "Remember", "Description": "List for important things"}
+            ]
+  post:
+    description: Create a new board
+    body:
+      application/json:
+        schema: board-post
+        example: |
+          {"name": "Vacation", "description": "Vacation plans"}
+    responses:
+      201:
+        description: |
+          Succesfully created a new resource
+        headers:
+          Location:
+            description: |
+              Location of the newly created resource
+            type: string
+            required: false
+
+  /{id}:
+    description: One board identified by id
+    uriParameters:
+      id:
+        description: Id of the board
+        type: number
+        example: 3
+    get:
+      responses:
+        200:
+          headers:
+            ETag:
+              description: Version number of the board resource.
+              example: 5
+          body:
+            example: |
+              {"id": 1, "name": "Kitchen redesign", "Description": "Extreme makeover of the kitchen"}
+        404:
+          body:
+            schema: error
+            example: |
+              {"errorid": "12345", "message": "The board with id .. done't exists"}
+    put:
+      description: Update the board
+      headers:
+        If-Match:
+          description: Version number of the board resource.
+          example: 5
+      body:
+        application/json:
+          schema: board
+          example: |
+            {"id": 4, "name": "Vacation", "description": "Vacation plans"}
+      responses:
+        204:
+          description: Succesfully updated the resource
+        403:
+          description: Missing required header - If-Match
+        412:
+          description: Version number og the resource didn't match.
+    /lists:
+      description: Lists on the board
+      /{id}:
+        description: One list
+        get:
+          responses:
+            200:
+              body:
+                example: |
+                  {"id": 1, "name": "Ideas", "Description": "Ideas to consider"}
+        /cards:
+          description: Cards on the list
+          get:
+            responses:
+              200:
+                body:
+                  example: |
+                    [
+                      {"id": "1", "name": "Repaint walls"},
+                      {"id": "2", "name": "New sink"},
+                      {"id": "3", "name": "Coffe machine"}
+                    ]
+          /{id}:
+            get:
+              responses:
+                200:
+                  body:
+                    example: |
+                      {"id": "1", "name": "Repaint walls"}
